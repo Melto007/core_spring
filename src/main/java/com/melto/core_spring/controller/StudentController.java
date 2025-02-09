@@ -3,9 +3,14 @@ package com.melto.core_spring.controller;
 import com.melto.core_spring.dto.StudentResponsedto;
 import com.melto.core_spring.dto.Studentdto;
 import com.melto.core_spring.service.StudentService;
+import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.validation.FieldError;
+import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
 import java.util.List;
 
 @RestController
@@ -18,7 +23,7 @@ public class StudentController {
     }
 
     @PostMapping("/students")
-    public StudentResponsedto createStudent(@RequestBody Studentdto studentdto) {
+    public StudentResponsedto createStudent(@Valid @RequestBody Studentdto studentdto) {
         return studentService.saveStudent(studentdto);
     }
 
@@ -41,5 +46,19 @@ public class StudentController {
     @ResponseStatus(HttpStatus.OK)
     public void deleteStudent(@PathVariable("student_id") Long id) {
         studentService.deleteStudent(id);
+    }
+
+    @ExceptionHandler(MethodArgumentNotValidException.class)
+    public ResponseEntity<?> handleMethodException(
+            MethodArgumentNotValidException exp
+    ) {
+        var errors = new HashMap<String, String>();
+        exp.getBindingResult().getAllErrors()
+                .forEach(error -> {
+                    var fieldName = ((FieldError) error).getField();
+                    var errorMsg = error.getDefaultMessage();
+                    errors.put(fieldName, errorMsg);
+                });
+        return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
     }
 }
